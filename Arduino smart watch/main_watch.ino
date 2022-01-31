@@ -1,108 +1,166 @@
-// include the arduino 
+// include the arduino
 #include "U8glib.h"
 #include <SoftwareSerial.h>
 
 SoftwareSerial BLEserial(2, 3);
+
 U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NONE);
 
-// time variables 
-int h=0;
-int m=0;
-int s=0;
+// variables
+int h2 = 0;
+int h = 0;
+int m2 = 0;
+int m = 0;
+int c = 0;
 int timeinit=0;
+int Signal;
+int bpm = 0;
+int bpmcount = 0;
 
-// updates the time variables
+String bpmstate = "on";
+
+// updates time variables
 unsigned long previoustimetimer = millis();
 unsigned long previoustimeble = millis();
-unsigned long previoustimescreen = millis();
+unsigned long previoustimebpm = millis();
 
-// delay variables
-long timerdelay = 1000;
-long bledelay = 2000;
-long screendelay = 1000;
+// delays variables 
+long timerdelay = 60000;
+long bledelay = 3000;
+long bpmdelay = 20;
 
-// Displays the name of the watch onto the screen
-String text="NeXTeP";
-String oldtext="NeXTeP";
-
-// Initiates the BLE 
+// initiates the BLE
 void setup() {
-  Serial.begin(115200); // Sets the data rate in bits per second (baud) for serial data transmission
+  pinMode(4,OUTPUT);
+  pinMode(0,INPUT);
+  digitalWrite(4,HIGH);
   BLEserial.begin(9600);
-  text="Initializing..."; // initialzing text
+  Serial.begin(38400);
 }
 
-// displays info on the screen
+// displays info on the screen 
+void draw2() {
+  u8g.setFont(u8g_font_fur14); // initiates font
+  u8g.setPrintPos(0, 25); // initiates text position 
+  u8g.print("NextepWatch"); 
+  u8g.setFont(u8g_font_5x8); // initiates font 
+  u8g.setPrintPos(0,60); // print text position
+  u8g.print("Waiting for BLE init...");
+}
+
+// displays the time
 void draw() {
-  u8g.setFont(u8g_font_helvR14); // initiates the font 
-  u8g.setPrintPos(0, 20); // initiates text position
-  u8g.print(h);u8g.print(":");u8g.print(m);u8g.print(":");u8g.print(s); // print time 
-  u8g.setPrintPos(0, 64); // initiates text position
-  u8g.print(String(text)); // prints user instruction 
+  u8g.setFont(u8g_font_fur35n);
+  u8g.setPrintPos(5, 38);
+  u8g.print(h2);u8g.print(h);u8g.print(":");u8g.print(m2);u8g.print(m);
 }
 
-// initiates watch tabs 
+// initiates watch tabs
 void screen(){
-    u8g.firstPage();
-  do {draw();} while (u8g.nextPage() );
+  u8g.firstPage();
+  if(timeinit != 0){
+    do {draw();} while (u8g.nextPage() );
+  }
+  else{
+    do {draw2();} while (u8g.nextPage() );
+  }
 }
 
-// time controller 
+// initiates the bpm 
+void bpmread(){
+  Signal = analogRead(0);
+  if(Signal > 513){
+    bpmcount += 1;
+  } 
+}
+
+// bpm calc
+void bpmcalc(){
+  bpm = bpmcount * 4;
+  bpmcount = 0;
+}
+
+// time controller
 void timer(){
-  if (timeinit>=3){ 
-    s+=1;
-      if (s == 60){
-        s = 0;
-        m += 1;
+  m+=1;
+  if (m > 9){
+    m2 += 1;
+    m = 0;
+  }
+  if (m2 > 5){
+    m2 = 0;
+    h += 1;
+  }
+  if (h > 9){
+    h2 += 1;
+    h = 0;
+  }
+  if (h2 == 2 and h == 4){
+    h2 = 0;
+    h = 0;
+  }
+}
+
+// asks the user for the hours, the minutes, and the seconds 
+void bletext(){
+  if(BLEserial.available()>0){
+    if (timeinit == 0){
+      h = BLEserial.readStringUntil('h').toInt();
+      m = BLEserial.readString().toInt();
+      if (m > 9){
+        m2 = m/10;
+        m = m%10;
       }
-      if (m == 60){
-        m = 0;
+      if (m2 > 5){
+        m2 = 0;
         h += 1;
       }
-      if (h == 24){
+      if (h > 9){
+        h2 = h/10;
+        h = h%10;
+      }
+      if (h2 == 2 and h == 4){
+        h2 = 0;
         h = 0;
       }
-    } 
-  }
-
-// asks the user for the hours, the minutes, and the seconds
-void bletext(){
-   if (text == "Initializing..."){text="Heure?";}
-   if(BLEserial.available()>0){
-        text = BLEserial.readString();
-          if (oldtext != text){
-            if (timeinit==0){
-              h = text.toInt();
-              text = "Minutes?";
-            }
-            if (timeinit==1){
-              m = text.toInt();
-              text = "Secondes?";
-            }
-            if (timeinit==2){
-              s = text.toInt();
-              text = "NeXTeP Watch!";
-            }
-          timeinit += 1; 
-          }
-        s += 1;
+      timeinit += 1;
+      screen();
+    }    
+    if (timeinit > 0){
+      String text = BLEserial.readString();    
+      if(text == "bpmoff"){
+        digitalWrite(4,LOW);
+        bpmstate = "off";
+      }
+      if(text == "bpmon"){
+        digitalWrite(4,HIGH);
+        bpmstate = "on";
+      }
     }
   }
+}
 
 // main loop
 void loop() {
   unsigned long currentTime = millis();
-  oldtext = text;
-  if (currentTime - previoustimescreen > screendelay){
-    previoustimescreen = currentTime;
-    screen();
-   }
+  if ((currentTime- previoustimebpm > bpmdelay) && (bpmstate == "on")){
+    previoustimebpm = currentTime;
+    bpmread();
+  }
+  
   if (currentTime - previoustimetimer > timerdelay){
     previoustimetimer = currentTime;
     timer();
-   }
+  }
+  
   if (currentTime - previoustimeble > bledelay){
     previoustimeble = currentTime;
     bletext();
-   }
+    screen();
+    c += 1;
+    if (c == 5){
+      c = 0;
+      bpmcalc();
+    }
+  } 
 }
