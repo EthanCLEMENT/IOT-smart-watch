@@ -2,7 +2,7 @@
 This is a project that I started in December 2021 and finished in February 2022. 
 
 ## Description
-The entire watch runs on an arduino uno which displays basic features such as a step counter, the heart rate or even the time. The watch includes a BLE ( bluetooth low energy ) so the watch can send the data from a run to the website which includes a database for each user where they can track their running stats. A query was built as well so the 
+The entire watch runs on an arduino uno which displays basic features such as a step counter, the heart rate or even the time. The watch includes a BLE ( bluetooth low energy ) so the watch can send the data from a run to the website which includes a database so each user can track their running stats. A query was built as well so the 
 administrators of the website can make requests in the database. 
 The BLE is also used to send the data from the watch to an IOS app where the same features displayed on the watch can be found. 
 
