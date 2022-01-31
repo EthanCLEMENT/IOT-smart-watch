@@ -1,0 +1,27 @@
+{% extends "signin.html"%}
+{% block title %} Viewing the database {% endblock %}
+{% block content %}
+	<h2> DataBase</h2>
+	<br>
+	<table style="width:80%">
+		<tr>
+			<th>FirstName</th>
+			<th>LastName</th>
+			<th>Username</th>
+			<th>gender</th>
+			<!-- <th>Password</th> -->
+			<th>Email</th>
+		</tr>
+		{% for user in values %}
+		<tr>
+			<td>{{user.name}}</td>
+			<td>{{user.username}}</td>
+			<!-- <td>{{user.password}}</td> -->
+			<td>{{user.email}}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	
+	
+{% endblock %}
