@@ -1,0 +1,14 @@
+/*It should be noted that in order for the css styling to be updated you have to press shift+
+f5 in order to also update the cache*/
+table, th, td {
+	border: 2px solid black;
+	border-color: #0000FF;
+}
+
+th, td {
+	padding: 5px;
+}
+
+th {
+	text-align: center;
+}
