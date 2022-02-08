@@ -32,6 +32,10 @@ class users(database.Model):
 def home():
 	return render_template("home.html")
 
+@app.route("/getdata")
+def getdata():
+	return "test"
+
 # signup page
 @app.route("/signup", methods=["POST", "GET"])
 def signup():
